@@ -1,0 +1,5 @@
+{
+  "name": "lazy-investing",
+  "packageManager": "yarn@3.3.1",
+  "private": true
+}
