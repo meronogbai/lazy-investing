@@ -5,7 +5,7 @@ config();
 
 const envSchema = z.object({
   GATEWAY_URL: z.string().url(),
-  GATEWAY_PORT: z.string().min(1),
+  GATEWAY_PORT: z.coerce.number(),
   IBKR_TICKER: z.string().min(1),
   YAHOO_FINANCE_TICKER: z.string().min(1),
 });
