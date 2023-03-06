@@ -68,13 +68,14 @@ const main = async () => {
 
   const quantity = Math.min(Math.floor(cash / price), 500);
 
-  const ordersPostResponse = await orderApi.iserverAccountAccountIdOrdersPost(
+  const createOrderResponse = await orderApi.iserverAccountAccountIdOrdersPost(
     selectedAccount,
     {
       orders: [
         {
-          orderType: "MKT",
+          orderType: "LMT",
           ticker: env.IBKR_TICKER,
+          price,
           quantity,
           conid,
           side: "BUY",
@@ -84,10 +85,24 @@ const main = async () => {
     }
   );
 
-  if (ordersPostResponse.data.length === 1 && ordersPostResponse.data[0].id) {
-    await orderApi.iserverReplyReplyidPost(ordersPostResponse.data[0].id, {
-      confirmed: true,
-    });
+  if (createOrderResponse.data[0].id) {
+    const orderReplyResponse = await orderApi.iserverReplyReplyidPost(
+      createOrderResponse.data[0].id,
+      {
+        confirmed: true,
+      }
+    );
+
+    // @ts-ignore
+    if (orderReplyResponse.data[0].id) {
+      const res = await orderApi.iserverReplyReplyidPost(
+        createOrderResponse.data[0].id,
+        {
+          confirmed: true,
+        }
+      );
+      console.log(res.data);
+    }
   }
 };
 
