@@ -7,6 +7,7 @@ import {
   AccountApi,
   PortfolioApi,
   ContractApi,
+  OrderRequest,
 } from "./generated/ibkr-client";
 import { getCurrentPrice } from "./price";
 
@@ -20,44 +21,56 @@ const accountApi = new AccountApi(config);
 const portfolioApi = new PortfolioApi(config);
 const contractApi = new ContractApi(config);
 
-const main = async () => {
+const establishBrokerageSession = async () => {
   const {
     data: { authenticated },
   } = await sessionApi.iserverAuthStatusPost();
 
   const canExecuteOrder = authenticated;
-  await sessionApi.ssoValidateGet();
+
   if (!canExecuteOrder) {
-    throw new Error("Need to login to execute order");
+    throw new Error("You need to login to invest.");
   }
 
-  const {
-    data: { selectedAccount },
-  } = await accountApi.iserverAccountsGet();
+  await sessionApi.ssoValidateGet();
+};
 
-  if (!selectedAccount) {
-    throw new Error("cry and weep");
+const getSelectedAccountId = async () => {
+  const response = await accountApi.iserverAccountsGet();
+
+  const selectedAccountId = response.data.selectedAccount;
+
+  if (!selectedAccountId) {
+    throw new Error(
+      `Selected account doesn't exist: ${JSON.stringify(response.data)}`
+    );
   }
 
+  return selectedAccountId;
+};
+
+const buildOrder = async (accountId: string): Promise<OrderRequest> => {
   const secdefSearchResponse = await contractApi.iserverSecdefSearchPost({
     symbol: env.IBKR_TICKER,
   });
 
   if (secdefSearchResponse.data.length !== 1) {
-    throw new Error("sad boy");
+    throw new Error(`IBKR can't find conid for ${env.IBKR_TICKER}.`);
   }
 
   // wrong response type, why u do this ibkr??
   const conid = Number(secdefSearchResponse.data[0].conid);
 
   if (isNaN(conid)) {
-    throw new Error("cry again");
+    throw new Error(
+      `Invalid conid: ${JSON.stringify(secdefSearchResponse.data[0])}`
+    );
   }
 
   const price = await getCurrentPrice(env.YAHOO_FINANCE_TICKER);
 
   const ledgerResponse = await portfolioApi.portfolioAccountIdLedgerGet(
-    selectedAccount
+    accountId
   );
 
   const cash = ledgerResponse.data.BASE?.settledcash;
@@ -66,28 +79,37 @@ const main = async () => {
     throw new Error("Settled cash is undefined :(");
   }
 
-  const quantity = Math.min(Math.floor(cash / price), 500);
+  const MAX_QUANTITY = 500;
+  const quantity = Math.min(Math.floor(cash / price), MAX_QUANTITY);
 
-  const createOrderResponse = await orderApi.iserverAccountAccountIdOrdersPost(
-    selectedAccount,
+  return {
+    orderType: "LMT",
+    ticker: env.IBKR_TICKER,
+    price,
+    quantity,
+    conid,
+    side: "BUY",
+    tif: "DAY",
+  };
+};
+
+const respondToOrderMessages = async ({
+  accountId,
+  order,
+}: {
+  accountId: string;
+  order: OrderRequest;
+}) => {
+  const submitOrderResponse = await orderApi.iserverAccountAccountIdOrdersPost(
+    accountId,
     {
-      orders: [
-        {
-          orderType: "LMT",
-          ticker: env.IBKR_TICKER,
-          price,
-          quantity,
-          conid,
-          side: "BUY",
-          tif: "DAY",
-        },
-      ],
+      orders: [order],
     }
   );
 
-  if (createOrderResponse.data[0].id) {
+  if (submitOrderResponse.data[0].id) {
     const orderReplyResponse = await orderApi.iserverReplyReplyidPost(
-      createOrderResponse.data[0].id,
+      submitOrderResponse.data[0].id,
       {
         confirmed: true,
       }
@@ -96,14 +118,23 @@ const main = async () => {
     // @ts-ignore
     if (orderReplyResponse.data[0].id) {
       const res = await orderApi.iserverReplyReplyidPost(
-        createOrderResponse.data[0].id,
+        submitOrderResponse.data[0].id,
         {
           confirmed: true,
         }
       );
-      console.log(res.data);
+
+      console.log("Order status", res.data[0]);
     }
   }
+};
+
+const main = async () => {
+  await establishBrokerageSession();
+  const accountId = await getSelectedAccountId();
+  const order = await buildOrder(accountId);
+  await respondToOrderMessages({ accountId, order });
+  console.log("🚀 Order submitted successfully!");
 };
 
 main().catch((e) => {
