@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import { env } from "./env";
 import {
   SessionApi,
@@ -8,8 +8,11 @@ import {
   PortfolioApi,
   ContractApi,
   OrderRequest,
+  IserverReplyReplyidPost200ResponseInner,
+  IserverAccountAccountIdOrderPost200ResponseInner,
 } from "./generated/ibkr-client";
 import { getCurrentPrice } from "./price";
+import readline from "node:readline/promises";
 
 const config = new Configuration({
   basePath: env.GATEWAY_URL,
@@ -94,6 +97,46 @@ const buildOrder = async (accountId: string): Promise<OrderRequest> => {
 };
 
 const respondToOrderMessages = async ({
+  orderId,
+  question,
+}: {
+  orderId: string;
+  question: string;
+}) => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const answer = await rl.question(`${question} Y/n`);
+
+  rl.close();
+
+  if (answer === "n" || (answer !== "Y" && answer !== "")) {
+    throw new Error("You're welcome to execute the order when you're ready.");
+  }
+
+  const orderReplyResponse = (await orderApi.iserverReplyReplyidPost(orderId, {
+    confirmed: true,
+  })) as AxiosResponse<
+    | IserverReplyReplyidPost200ResponseInner[]
+    | IserverAccountAccountIdOrderPost200ResponseInner[]
+  >;
+
+  console.log("Order status", orderReplyResponse.data[0]);
+
+  if (
+    "id" in orderReplyResponse.data[0] &&
+    orderReplyResponse.data[0].id &&
+    orderReplyResponse.data[0].message?.[0]
+  ) {
+    await respondToOrderMessages({
+      orderId: orderReplyResponse.data[0].id,
+      question: orderReplyResponse.data[0].message?.[0],
+    });
+  }
+};
+
+const submitOrder = async ({
   accountId,
   order,
 }: {
@@ -107,33 +150,25 @@ const respondToOrderMessages = async ({
     }
   );
 
-  if (submitOrderResponse.data[0].id) {
-    const orderReplyResponse = await orderApi.iserverReplyReplyidPost(
-      submitOrderResponse.data[0].id,
-      {
-        confirmed: true,
-      }
-    );
-
-    // @ts-ignore
-    if (orderReplyResponse.data[0].id) {
-      const res = await orderApi.iserverReplyReplyidPost(
-        submitOrderResponse.data[0].id,
-        {
-          confirmed: true,
-        }
-      );
-
-      console.log("Order status", res.data[0]);
-    }
+  console.log("Order status", submitOrderResponse.data[0]);
+  const orderId = submitOrderResponse.data[0].id;
+  const question = submitOrderResponse.data[0].message?.[0];
+  if (orderId && question) {
+    await respondToOrderMessages({
+      orderId,
+      question,
+    });
   }
 };
 
 const main = async () => {
   await establishBrokerageSession();
+  console.log("Session established");
   const accountId = await getSelectedAccountId();
+  console.log("Selected accountId", accountId);
   const order = await buildOrder(accountId);
-  await respondToOrderMessages({ accountId, order });
+  console.log("Order request", order);
+  await submitOrder({ accountId, order });
   console.log("🚀 Order submitted successfully!");
 };
 
