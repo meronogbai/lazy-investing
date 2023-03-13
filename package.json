@@ -2,6 +2,7 @@
   "name": "lazy-investing",
   "packageManager": "yarn@3.4.1",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 ts-node-dev src/index.ts",
     "gen": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://www.interactivebrokers.com/api/doc.json --skip-validate-spec -g typescript-axios -o /local/src/generated/ibkr-client"
