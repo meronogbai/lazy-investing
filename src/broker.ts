@@ -114,8 +114,10 @@ export class Broker {
       throw new Error("Settled cash is undefined :(");
     }
 
-    const MAX_QUANTITY = 500;
-    const quantity = Math.min(Math.floor(cash / price), MAX_QUANTITY);
+    const MAX_AMOUNT = 6000;
+    const amountToSpend = Math.min(MAX_AMOUNT, cash);
+
+    const quantity = Math.floor(amountToSpend / price);
 
     return {
       orderType: "LMT",
