@@ -42,6 +42,7 @@ export class Broker {
 
   async submitOrder(options: { amount: number }) {
     const order = await this.buildOrder(options);
+    console.log("Order", order);
     const accountId = await this.selectAccount();
     const submitOrderResponse =
       await this.orderApi.iserverAccountAccountIdOrdersPost(accountId, {
