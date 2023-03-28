@@ -40,8 +40,8 @@ export class Broker {
     await this.sessionApi.ssoValidateGet();
   }
 
-  async submitOrder() {
-    const order = await this.buildOrder();
+  async submitOrder(options: { amount: number }) {
+    const order = await this.buildOrder(options);
     const accountId = await this.selectAccount();
     const submitOrderResponse =
       await this.orderApi.iserverAccountAccountIdOrdersPost(accountId, {
@@ -80,8 +80,7 @@ export class Broker {
     return this.selectedAccountId;
   }
 
-  // @TODO: support interactive order types
-  private async buildOrder() {
+  private async buildOrder(options: { amount: number }) {
     const accountId = await this.selectAccount();
     const secdefSearchResponse = await this.contractApi.iserverSecdefSearchPost(
       {
@@ -114,8 +113,7 @@ export class Broker {
       throw new Error("Settled cash is undefined :(");
     }
 
-    const MAX_AMOUNT = 6000;
-    const amountToSpend = Math.min(MAX_AMOUNT, cash);
+    const amountToSpend = Math.min(options.amount, cash);
 
     const quantity = Math.floor(amountToSpend / price);
 
@@ -137,6 +135,7 @@ export class Broker {
     orderId: string;
     question: string;
   }) {
+    // @TODO remove readline logic
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,

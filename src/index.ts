@@ -1,12 +1,16 @@
 import { AxiosError } from "axios";
 import { Broker } from "./broker";
+import { parseCLIArguments } from "./utils";
 
 const main = async () => {
   // @TODO spin up docker instance here
+  const { amount } = await parseCLIArguments();
   const broker = new Broker();
   await broker.establishSession();
   console.log("Session established");
-  await broker.submitOrder();
+  await broker.submitOrder({
+    amount,
+  });
   console.log("🚀 Order submitted successfully!");
 };
 
