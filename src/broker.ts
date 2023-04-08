@@ -134,7 +134,6 @@ export class Broker {
     orderId: string;
     question: string;
   }) {
-    // @TODO remove readline logic
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
