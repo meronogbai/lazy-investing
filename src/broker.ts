@@ -42,7 +42,6 @@ export class Broker {
 
   async submitOrder(options: { amount: number }) {
     const order = await this.buildOrder(options);
-    console.log("Order", order);
     const accountId = await this.selectAccount();
     const submitOrderResponse =
       await this.orderApi.iserverAccountAccountIdOrdersPost(accountId, {
@@ -56,9 +55,8 @@ export class Broker {
         orderId,
         question,
       });
-    } else {
-      console.log("Order status", submitOrderResponse.data[0]);
     }
+    console.log("✅ Submitted order.");
   }
 
   private async selectAccount() {
@@ -142,12 +140,12 @@ export class Broker {
       output: process.stdout,
     });
 
-    const answer = await rl.question(`${question} [Y/n]:`);
+    const answer = await rl.question(`${question} [Y/n]: `);
 
     rl.close();
 
     if (answer === "n" || (answer !== "Y" && answer !== "")) {
-      throw new Error("You're welcome to execute the order when you're ready.");
+      throw new Error("😢 Order cancelled.");
     }
 
     const orderReplyResponse = (await this.orderApi.iserverReplyReplyidPost(
@@ -169,8 +167,6 @@ export class Broker {
         orderId: orderReplyResponse.data[0].id,
         question: orderReplyResponse.data[0].message?.[0],
       });
-    } else {
-      console.log("Order status", orderReplyResponse.data[0]);
     }
   }
 }

@@ -18,9 +18,10 @@ main().catch((e) => {
   process.exitCode = 1;
 
   if (e instanceof AxiosError) {
+    console.error("Api error: " + e.message);
     console.error(e.response?.data);
     return;
   }
 
-  console.error(e);
+  console.error(e || "Unknown error");
 });
