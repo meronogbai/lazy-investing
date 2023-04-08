@@ -38,9 +38,8 @@ Set the following environment variables in `.env.ibeam` at the root of the repos
 
 ### Usage
 
-1. Start IBeam and authenticate to IBKR by running `docker compose up -d` in your terminal.
+1. Run `yarn dev --amount <cash>` in your terminal to execute the script.
 1. Accept the two-factor authentication prompt for IBKR if necessary.
-1. Execute the script by running `yarn dev` in your terminal.
 
 ## Useful Commands
 
