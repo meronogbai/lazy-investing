@@ -6,7 +6,17 @@ export const parseCLIArguments = async () => {
     .option("amount", {
       type: "number",
       demandOption: true,
-      description: "total amount",
+      description: "Total amount of stock in USD",
+    })
+    .option("ticker", {
+      type: "string",
+      demandOption: true,
+      description: "Ticker of stock in IBKR",
+    })
+    .option("yahooFinanceTicker", {
+      type: "string",
+      demandOption: true,
+      description: "Ticker of stock in Yahoo Finance",
     })
     .parse();
 

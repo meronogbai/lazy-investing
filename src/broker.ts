@@ -13,6 +13,12 @@ import {
 import { getCurrentPrice } from "./price";
 import readline from "node:readline/promises";
 
+type OrderInput = {
+  amount: number;
+  ticker: string;
+  yahooFinanceTicker: string;
+};
+
 export class Broker {
   private config = new Configuration({
     basePath: env.GATEWAY_URL,
@@ -40,7 +46,7 @@ export class Broker {
     await this.sessionApi.ssoValidateGet();
   }
 
-  async submitOrder(options: { amount: number }) {
+  async submitOrder(options: OrderInput) {
     const order = await this.buildOrder(options);
     const accountId = await this.selectAccount();
     const submitOrderResponse =
@@ -79,16 +85,16 @@ export class Broker {
     return this.selectedAccountId;
   }
 
-  private async buildOrder(options: { amount: number }) {
+  private async buildOrder(options: OrderInput) {
     const accountId = await this.selectAccount();
     const secdefSearchResponse = await this.contractApi.iserverSecdefSearchPost(
       {
-        symbol: env.IBKR_TICKER,
+        symbol: options.ticker,
       }
     );
 
     if (secdefSearchResponse.data.length !== 1) {
-      throw new Error(`IBKR can't find conid for ${env.IBKR_TICKER}.`);
+      throw new Error(`IBKR can't find conid for ${options.ticker}.`);
     }
 
     // wrong response type, why u do this ibkr??
@@ -100,7 +106,7 @@ export class Broker {
       );
     }
 
-    const price = await getCurrentPrice(env.YAHOO_FINANCE_TICKER);
+    const price = await getCurrentPrice(options.yahooFinanceTicker);
 
     const ledgerResponse = await this.portfolioApi.portfolioAccountIdLedgerGet(
       accountId
@@ -118,7 +124,7 @@ export class Broker {
 
     return {
       orderType: "LMT",
-      ticker: env.IBKR_TICKER,
+      ticker: options.ticker,
       price,
       quantity,
       conid,

@@ -24,22 +24,17 @@ To use this script, you must have Docker, Yarn, and Node.js version 18 or higher
 
 ### Environment Variables
 
-Set the following environment variables in `.env.local` at the root of the repository:
-
-- `IBKR_TICKER` - The ticker symbol for the stock you want to purchase on IBKR.
-- `YAHOO_FINANCE_TICKER` - The ticker symbol for the same stock on Yahoo Finance.
-
-We need to specify the ticker twice because the script uses Yahoo Finance to fetch the regular market price of the stock, and Yahoo Finance and IBKR use different ticker symbols.
-
 Set the following environment variables in `.env.ibeam` at the root of the repository:
 
 - `IBEAM_ACCOUNT` - Your IBKR account username.
 - `IBEAM_PASSWORD` - Your IBKR account password.
 
-### Usage
+### Example
 
-1. Run `yarn dev --amount <cash>` in your terminal to execute the script.
+1. Run `yarn dev --amount 1000 --ticker TSLA --yahooFinanceTicker TSLA` in your terminal to execute the script.
 1. Accept the two-factor authentication prompt for IBKR if necessary.
+
+Note: We need to specify the ticker twice because the script uses Yahoo Finance to fetch the regular market price of the stock, and Yahoo Finance and IBKR use different ticker symbols.
 
 ## Useful Commands
 

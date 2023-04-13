@@ -4,12 +4,14 @@ import { startIbeam, stopIbeam } from "./ibeam";
 import { parseCLIArguments } from "./utils";
 
 const main = async () => {
-  const { amount } = await parseCLIArguments();
+  const { amount, ticker, yahooFinanceTicker } = await parseCLIArguments();
   await startIbeam();
   const broker = new Broker();
   await broker.establishSession();
   await broker.submitOrder({
     amount,
+    ticker,
+    yahooFinanceTicker,
   });
 };
 
