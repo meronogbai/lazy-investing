@@ -31,12 +31,9 @@ export const startIbeam = async () => {
         return;
       }
 
-      if (
-        data
-          .toString()
-          .toLowerCase()
-          .includes("gateway running and authenticated")
-      ) {
+      console.log(data);
+
+      if (data.toLowerCase().includes("gateway running and authenticated")) {
         child.kill("SIGINT");
         console.log("✅ Authenticated via ibeam");
         resolve(undefined);
