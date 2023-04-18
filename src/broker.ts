@@ -30,8 +30,6 @@ export class Broker {
   private portfolioApi = new PortfolioApi(this.config);
   private contractApi = new ContractApi(this.config);
 
-  private selectedAccountId: string | null = null;
-
   async establishSession() {
     const {
       data: { authenticated },
@@ -47,8 +45,8 @@ export class Broker {
   }
 
   async submitOrder(options: OrderInput) {
-    const order = await this.buildOrder(options);
     const accountId = await this.selectAccount();
+    const order = await this.buildOrder(options, accountId);
     const submitOrderResponse =
       await this.orderApi.iserverAccountAccountIdOrdersPost(accountId, {
         orders: [order],
@@ -66,10 +64,6 @@ export class Broker {
   }
 
   private async selectAccount() {
-    if (this.selectedAccountId !== null) {
-      return this.selectedAccountId;
-    }
-
     const response = await this.accountApi.iserverAccountsGet();
 
     const selectedAccountId = response.data.selectedAccount;
@@ -79,14 +73,10 @@ export class Broker {
         `Selected account doesn't exist: ${JSON.stringify(response.data)}`
       );
     }
-
-    this.selectedAccountId = selectedAccountId;
-
-    return this.selectedAccountId;
+    return selectedAccountId;
   }
 
-  private async buildOrder(options: OrderInput) {
-    const accountId = await this.selectAccount();
+  private async buildOrder(options: OrderInput, accountId: string) {
     const secdefSearchResponse = await this.contractApi.iserverSecdefSearchPost(
       {
         symbol: options.ticker,
@@ -108,11 +98,10 @@ export class Broker {
 
     const price = await getCurrentPrice(options.yahooFinanceTicker);
 
-    const ledgerResponse = await this.portfolioApi.portfolioAccountIdLedgerGet(
-      accountId
-    );
+    const portfolioLedgerResponse =
+      await this.portfolioApi.portfolioAccountIdLedgerGet(accountId);
 
-    const cash = ledgerResponse.data.BASE?.settledcash;
+    const cash = portfolioLedgerResponse.data.BASE?.settledcash;
 
     if (cash === undefined) {
       throw new Error("Settled cash is undefined :(");
