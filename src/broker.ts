@@ -11,7 +11,6 @@ import {
   IserverAccountAccountIdOrderPost200ResponseInner,
 } from "./generated/ibkr-client";
 import { getCurrentPrice } from "./price";
-import readline from "node:readline/promises";
 
 type OrderInput = {
   amount: number;
@@ -55,9 +54,8 @@ export class Broker {
     const orderId = submitOrderResponse.data[0].id;
     const question = submitOrderResponse.data[0].message?.[0];
     if (orderId && question) {
-      await this.recursivelyRespondToOrderNotifications({
+      await this.recursivelyConfirmOrderNotifications({
         orderId,
-        question,
       });
     }
     console.log("✅ Submitted order.");
@@ -122,26 +120,11 @@ export class Broker {
     };
   }
 
-  private async recursivelyRespondToOrderNotifications({
+  private async recursivelyConfirmOrderNotifications({
     orderId,
-    question,
   }: {
     orderId: string;
-    question: string;
   }) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    const answer = await rl.question(`${question} [Y/n]: `);
-
-    rl.close();
-
-    if (answer === "n" || (answer !== "Y" && answer !== "")) {
-      throw new Error("😢 Order cancelled.");
-    }
-
     const orderReplyResponse = (await this.orderApi.iserverReplyReplyidPost(
       orderId,
       {
@@ -157,9 +140,8 @@ export class Broker {
       orderReplyResponse.data[0].id &&
       orderReplyResponse.data[0].message?.[0]
     ) {
-      await this.recursivelyRespondToOrderNotifications({
+      await this.recursivelyConfirmOrderNotifications({
         orderId: orderReplyResponse.data[0].id,
-        question: orderReplyResponse.data[0].message?.[0],
       });
     }
   }
