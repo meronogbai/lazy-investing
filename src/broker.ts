@@ -94,7 +94,14 @@ export class Broker {
       );
     }
 
-    const price = await getCurrentPrice(options.yahooFinanceTicker);
+    let price: number;
+
+    try {
+      price = await getCurrentPrice(options.yahooFinanceTicker);
+    } catch (e) {
+      console.error("Error while getting current price from yahoo");
+      throw e;
+    }
 
     const portfolioLedgerResponse =
       await this.portfolioApi.portfolioAccountIdLedgerGet(accountId);

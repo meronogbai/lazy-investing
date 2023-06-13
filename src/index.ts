@@ -1,30 +1,43 @@
-import { AxiosError } from "axios";
 import { Broker } from "./broker";
 import { startIbeam, stopIbeam } from "./ibeam";
 import { parseCLIArguments } from "./utils";
 
 const main = async () => {
   const { amount, ticker, yahooFinanceTicker } = await parseCLIArguments();
-  await startIbeam();
+
+  try {
+    await startIbeam();
+  } catch (e) {
+    console.error("Error while starting ibeam");
+    console.error(e);
+    throw e;
+  }
+
   const broker = new Broker();
-  await broker.establishSession();
-  await broker.submitOrder({
-    amount,
-    ticker,
-    yahooFinanceTicker,
-  });
+
+  try {
+    await broker.establishSession();
+  } catch (e) {
+    console.error("Error while establishing session");
+    console.error(e);
+    throw e;
+  }
+
+  try {
+    await broker.submitOrder({
+      amount,
+      ticker,
+      yahooFinanceTicker,
+    });
+  } catch (e) {
+    console.error("Error while submitting order");
+    console.error(e);
+    throw e;
+  }
 };
 
 main()
-  .catch((e) => {
+  .catch(() => {
     process.exitCode = 1;
-
-    if (e instanceof AxiosError) {
-      console.error("Api error: " + e.message);
-      console.error(e.response?.data);
-      return;
-    }
-
-    console.error(e?.message || "Unknown error");
   })
   .finally(stopIbeam);
