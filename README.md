@@ -2,6 +2,9 @@
 
 This Node.js script automates stock purchasing through Interactive Brokers (IBKR) by placing a limit order for as many shares as possible.
 
+> **Warning**
+> This script assumes that your account's main currency is USD.
+
 ## Built with
 
 - [IBeam](https://github.com/Voyz/ibeam) - A tool for managing IBKR's API gateway
@@ -30,6 +33,8 @@ Set the following environment variables in `.env.ibeam` at the root of the repos
 - `IBEAM_PASSWORD` - Your IBKR account password.
 
 ### Example
+
+This will purchase Tesla (TSLA) shares equivalent to 1000 USD. For example, if a single Tesla share is valued at 272.96 USD, you will get 3 shares with 1000 USD.
 
 1. Run `yarn dev --amount 1000 --ticker TSLA --yahooFinanceTicker TSLA` in your terminal to execute the script.
 1. Accept the two-factor authentication prompt for IBKR if necessary.
